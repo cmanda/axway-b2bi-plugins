@@ -8,3 +8,12 @@
 * Bounce Trading Engine on all the B2Bi nodes (if using in clustered mode)
 * Source can be viewed [here](https://github.com/TurnUpTheBass/axway-b2bi-plugins/tree/master/SyncplicityPluggableTransport) 
 * If you are building on your local developer environment, add a lib folder to the project and include interchange-server.jar and other relevant dependencies. 
+
+### Sample screenshots
+
+#### Sample Application Pickup Configuration
+![Sample Application Pickup Configuration](distributions/screenshots/B2Bi_Syncplicity_ApplicationPickup.jpg)
+
+
+#### Sample Application Delivery Configuration
+![Sample Application Delivery Configuration](distributions/screenshots/B2Bi_Syncplicity_ApplicationDelivery.jpg)
