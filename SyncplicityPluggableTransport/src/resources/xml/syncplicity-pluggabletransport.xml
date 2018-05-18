@@ -1,0 +1,45 @@
+<TransportDefinition name="Syncplicity Consumer" description="Pluggable transport which consumes messages from Syncplicity." available="true">
+        <Class>com.axway.gps.PluggableSyncplicityTransport</Class>
+        <Usages>
+                <Consume>
+                        <Integration />
+                        <RawTrading />
+                </Consume>
+        </Usages>
+        <SettingDefinitions>
+                <SettingDefinition name="App Key" defaultValue="" description="Application Key" type="string" required="true" encrypt="false" mask="false"/>
+                <SettingDefinition name="App Secret" defaultValue="" description="Application Secret" type="string" required="true" encrypt="true" mask="true"/>
+                <SettingDefinition name="Admin Token" defaultValue="" description="Admin Token" encrypt="false" mask="true" required="true" type="string" />
+                <SettingDefinition name="Folder" defaultValue="" description="Source Folder" encrypt="false" mask="false" required="true" type="string"/>
+                <SettingDefinition name="Filter Type" defaultValue="glob" description="Pattern type for matching file names" type="string" required="true" encrypt="false" mask="false">
+                        <SelectionList>
+                                <SelectionItem>glob</SelectionItem>
+                                <SelectionItem>regex</SelectionItem>
+                        </SelectionList>
+                </SettingDefinition>
+                <SettingDefinition name="Filter" defaultValue="*" description="Filter pattern to download remote files" encrypt="false" mask="false" required="true" type="string"/>
+        </SettingDefinitions>
+        <ConstantSettings>
+                <ConstantSetting name="Exchange Type" value="pickup" />
+        </ConstantSettings>
+</TransportDefinition>
+
+
+<TransportDefinition name="Syncplicity Producer" description="Pluggable transport which produces messages to Syncplicity." available="true">
+        <Class>com.axway.gps.PluggableSyncplicityTransport</Class>
+        <Usages>
+                <Produce>
+                        <Integration />
+                        <RawTrading />
+                </Produce>
+        </Usages>
+        <SettingDefinitions>
+                 <SettingDefinition name="App Key" defaultValue="" description="Application Key" type="string" required="true" encrypt="false" mask="false"/>
+                <SettingDefinition name="App Secret" defaultValue="" description="Application Secret" type="string" required="true" encrypt="true" mask="true"/>
+                <SettingDefinition name="Admin Token" defaultValue="" description="Admin Token" encrypt="false" mask="true" required="true" type="string" />
+                 <SettingDefinition name="Folder" description="Destination folder to upload the files. Default is \"/\"" encrypt="false" mask="false" required="false" type="string" defaultValue="" />
+         </SettingDefinitions>
+        <ConstantSettings>
+                <ConstantSetting name="Exchange Type" value="delivery" />
+        </ConstantSettings>
+</TransportDefinition>
