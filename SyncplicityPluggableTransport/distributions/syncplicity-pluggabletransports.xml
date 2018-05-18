@@ -24,6 +24,16 @@
                                 <SelectionItem>false</SelectionItem>
                         </SelectionList>
                 </SettingDefinition>
+                <SettingDefinition name="Use Proxy" description="Use Proxy for pickup exchanges" encrypt="false" mask="false" required="true" type="string" defaultValue="false">
+                        <SelectionList>
+                                <SelectionItem>true</SelectionItem>
+                                <SelectionItem>false</SelectionItem>
+                        </SelectionList>
+                </SettingDefinition>
+                <SettingDefinition name="Proxy Host" defaultValue="" description="" type="string" required="false" encrypt="false" mask="false"/>
+                <SettingDefinition name="Proxy Port" defaultValue="" description="" type="string" required="false" encrypt="false" mask="false"/>
+                <SettingDefinition name="Proxy Username" defaultValue="" description="" type="string" required="false" encrypt="false" mask="false"/>
+                <SettingDefinition name="Proxy Password" defaultValue="" description="" type="string" required="false" encrypt="true" mask="true"/>
 				
         </SettingDefinitions>
         <ConstantSettings>
@@ -45,7 +55,18 @@
                 <SettingDefinition name="App Secret" defaultValue="" description="Application Secret" type="string" required="true" encrypt="true" mask="true"/>
                 <SettingDefinition name="Admin Token" defaultValue="" description="Admin Token" encrypt="false" mask="true" required="true" type="string" />
                  <SettingDefinition name="Folder" description="Destination folder to upload the files" encrypt="false" mask="false" required="false" type="string" defaultValue="" />
+               <SettingDefinition name="Use Proxy" description="Use Proxy for delivery exchanges" encrypt="false" mask="false" required="true" type="string" defaultValue="false">
+                        <SelectionList>
+                                <SelectionItem>true</SelectionItem>
+                                <SelectionItem>false</SelectionItem>
+                        </SelectionList>
+                </SettingDefinition>
+                <SettingDefinition name="Proxy Host" defaultValue="" description="" type="string" required="false" encrypt="false" mask="false"/>
+                <SettingDefinition name="Proxy Port" defaultValue="" description="" type="string" required="false" encrypt="false" mask="false"/>
+                <SettingDefinition name="Proxy Username" defaultValue="" description="" type="string" required="false" encrypt="false" mask="false"/>
+                <SettingDefinition name="Proxy Password" defaultValue="" description="" type="string" required="false" encrypt="true" mask="true"/>
          </SettingDefinitions>
+         
         <ConstantSettings>
                 <ConstantSetting name="Exchange Type" value="delivery" />
         </ConstantSettings>

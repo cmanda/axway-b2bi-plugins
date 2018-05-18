@@ -47,6 +47,7 @@ import util.APIGateway;
 import java.net.Authenticator;
 import java.net.InetSocketAddress;
 import java.net.PasswordAuthentication;
+import java.net.Proxy;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.KeyManagementException;
@@ -89,6 +90,11 @@ public class PluggableSyncplicityTransport implements PluggableClient {
 	private static final String SETTING_PICKUP_PATTERN = "Filter";
 	private static final String SETTING_PATTERN_TYPE = "Filter Type";
 	private static final String SETTING_DELETE = "Delete After Consumption";
+	private static final String SETTING_PROXY = "Use Proxy";
+	private static final String SETTING_PROXY_HOST = "Proxy Host";
+	private static final String SETTING_PROXY_PORT = "Proxy Port";
+	private static final String SETTING_PROXY_USER = "Proxy Username";
+	private static final String SETTING_PROXY_PW = "Proxy Password";
 
 	// Setting to distinguish pickup and delivery mode
 	private static final String SETTING_EXCHANGE_TYPE = "Exchange Type";
@@ -114,6 +120,11 @@ public class PluggableSyncplicityTransport implements PluggableClient {
 	private String _filtertype;
 	private String _exchangeType;
 	private String _deleteAfterConsumption;
+	private String _useProxy;
+	private String _proxyHost;
+	private String _proxyPort;
+	private String _proxyUser;
+	private String _proxyPassword;
 	
     String messageContent = null;
 	private String OathParam[] = new String[3];
@@ -173,7 +184,15 @@ public class PluggableSyncplicityTransport implements PluggableClient {
 				_deleteAfterConsumption = pluggableSettings.getSetting(SETTING_DELETE);
 				
 			}
-				
+
+			
+			_useProxy = pluggableSettings.getSetting(SETTING_PROXY);
+			_proxyHost = pluggableSettings.getSetting(SETTING_PROXY_HOST);
+			_proxyPort = pluggableSettings.getSetting(SETTING_PROXY_PORT);
+			_proxyUser = pluggableSettings.getSetting(SETTING_PROXY_USER);
+			_proxyPassword = pluggableSettings.getSetting(SETTING_PROXY_PW);
+			
+			
 			OathParam[0] = _appkey;
 			OathParam[1] = _appsecret;
 			OathParam[2] = _admintoken;
@@ -201,6 +220,23 @@ public class PluggableSyncplicityTransport implements PluggableClient {
 	public void connect() throws UnableToConnectException {
 		
 		try {
+			
+			if (_useProxy.equals("true")) {
+			
+				// Set Proxy
+				
+			    System.setProperty("http.proxyHost", _proxyHost) ;
+			    System.setProperty("http.proxyPort", _proxyPort) ;
+	
+			    Authenticator.setDefault(new Authenticator() {
+			      protected PasswordAuthentication getPasswordAuthentication() {
+			        return new
+			           PasswordAuthentication(_proxyUser,_proxyPassword.toCharArray());
+			    }});
+			
+			}
+			
+			
 			logger.info(String.format("Connecting to Syncplicity Server"));
 			
 		} catch (Exception e) {
