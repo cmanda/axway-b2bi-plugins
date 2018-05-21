@@ -28,6 +28,7 @@ import com.cyclonecommerce.tradingengine.transport.pluggable.api.PluggableSettin
 import com.cyclonecommerce.util.VirtualData;
 import com.cyclonecommerce.tradingengine.transport.pluggable.api.PluggableMessage;
 import util.PluginConstants;
+import util.Serialization;
 import util.pattern.PatternKeyValidator;
 import util.pattern.PatternKeyValidatorFactory;
 
@@ -298,7 +299,7 @@ public class PluggableSyncplicityTransport implements PluggableClient {
 		try { 
 			
 			logger.info(String.format("Producing message"));
-
+			
 			uploadFile(message, _folder);
 		 	message.setMetadata("SyncplicityDeliveryFolder", _folder);
 		 	
@@ -330,6 +331,11 @@ public class PluggableSyncplicityTransport implements PluggableClient {
 	        
         	String FolderID = getFolderID(ConsumptionSyncPoint, _folder);
 			
+            if (FolderID.equals(null)) {
+          	  logger.error("Pickup folder does not exist");
+          	  return null;
+            }
+            
         	// Get Folder contents
 
         	logger.info("Now retrieving requested file(s) from folder: " + _folder);
@@ -402,9 +408,11 @@ public class PluggableSyncplicityTransport implements PluggableClient {
 	
 	public static String getFolderID (SyncPoint ConsumptionSyncPoint, String FolderName) {
 	
-	    String DownloadFolder = FolderName;
+	    String VirtualPath = FolderName;
 		String FolderID = "";
-	    
+		boolean suppressErrors = true;
+		Folder cFolder[];
+		
 	    String splitFolderPath[] = FolderName.split("/");    	
 		
 		
@@ -418,22 +426,15 @@ public class PluggableSyncplicityTransport implements PluggableClient {
 	        
 	        // Remove Syncpoint from provided folder path
 	        
-	        DownloadFolder = NonSyncPointPath(FolderName);
-	
-		    // Shortcut to get the download folder
-	
-	        Folder folder = new Folder();
-	        folder.Name = DownloadFolder;
-	        folder.Status = FolderStatus.Added;
-	        Folder[] folders = { folder };
-	        Folder[] createdFolders = FolderService.createFolders(ConsumptionSyncPoint.Id, ConsumptionSyncPoint.RootFolderId,
-	                folders);
-	        if (createdFolders == null || createdFolders.length == 0) {
-	            logger.error("No folder was created.");
-	            return null;
-	        }
+	        VirtualPath = NonSyncPointPath(FolderName);
 	        
-	    	FolderID = createdFolders[0].FolderId;
+	        // Retrieve the Folder ID
+	        
+	        String FolderInfo = FolderService.getExistingFolderInfo(ConsumptionSyncPoint.Id, VirtualPath, suppressErrors);
+	        cFolder = Serialization.deserizalize(FolderInfo, Folder[].class);
+	                
+	        FolderID = cFolder[0].FolderId;
+	        
 	    }
 	    
 	    return FolderID;	
@@ -470,6 +471,11 @@ public class PluggableSyncplicityTransport implements PluggableClient {
 	        
     	String FolderID = getFolderID(ListSyncPoint, _folder);
        	
+        if (FolderID.equals(null)) {
+      	  logger.error("Folder does not exist");
+      	  return null;
+        }
+        
 		// Get the Folder Contents
         
         Folder folder = FolderService.getFolder(ListSyncPoint.Id, FolderID, true);
@@ -603,6 +609,12 @@ public class PluggableSyncplicityTransport implements PluggableClient {
           
           // Do some work to hash out the right folder
           String FolderID = getFolderID(ProductionSyncPoint, uFolderName);
+          
+          if (FolderID.equals(null)) {
+        	  logger.error("Target folder does not exist");
+        	  return;
+          }
+          
           Folder ufolder = FolderService.getFolder(ProductionSyncPoint.Id, FolderID, true);
                    
           logger.info(String.format("Finished Folder creation. New Folder id: %s", FolderID));

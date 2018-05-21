@@ -20,9 +20,12 @@ public class FolderService extends APIGateway {
      */
     protected static String folderUrl;
 
+    protected static String folderNameUrl;
+
     static {
         foldersUrl = ConfigurationHelper.getBaseApiEndpointUrl() + "sync/folder_folders.svc/%s/folder/%s/folders";
         folderUrl = ConfigurationHelper.getBaseApiEndpointUrl() + "sync/folder.svc/%s/folder/%s?include=active";
+        folderNameUrl = ConfigurationHelper.getBaseApiEndpointUrl() + "sync/folders.svc/%s/folders?virtual_path=%s";
     }
 
     /**
@@ -54,6 +57,24 @@ public class FolderService extends APIGateway {
     public static Folder getFolder(long syncPointId, String folderId, boolean suppressErrors) {
         return httpGet(String.format(folderUrl, syncPointId, folderId), Folder.class, suppressErrors);
     }
+    
+    
+    
+    /**
+     * Retrieves info for existing Folder
+     * 
+     * @param syncPointId
+     *            the SyncPoint ID
+     * @param folderName
+     *            the Folder Name (not including the Syncpoint)
+     * @param suppressErrors
+     *            indicates whether errors should be suppressed
+     * @return the matching <code>Folder</code> object
+     */
+    
+    public static String getExistingFolderInfo(long syncPointId, String folderName, boolean suppressErrors) {
+        return httpGet(String.format(folderNameUrl, syncPointId, folderName), String.class, suppressErrors);
+    }     
 
     /**
      * Deletes a Folder.
