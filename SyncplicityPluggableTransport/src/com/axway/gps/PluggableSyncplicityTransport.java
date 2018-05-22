@@ -49,6 +49,8 @@ import java.net.Authenticator;
 import java.net.InetSocketAddress;
 import java.net.PasswordAuthentication;
 import java.net.Proxy;
+import java.net.ProxySelector;
+import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.KeyManagementException;
@@ -61,6 +63,7 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.Map;
 import java.util.Iterator;
+import java.util.List;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Properties;
@@ -225,9 +228,13 @@ public class PluggableSyncplicityTransport implements PluggableClient {
 			if (_useProxy.equals("true")) {
 			
 				// Set Proxy
-				
+				/*
 			    System.setProperty("http.proxyHost", _proxyHost) ;
 			    System.setProperty("http.proxyPort", _proxyPort) ;
+			    System.setProperty("https.proxyHost", _proxyHost) ;
+			    System.setProperty("https.proxyPort", _proxyPort) ;
+			    System.setProperty("socksProxyHost", _proxyHost) ;
+			    System.setProperty("socksProxyPort", _proxyPort) ;
 	
 			    Authenticator.setDefault(new Authenticator() {
 			      protected PasswordAuthentication getPasswordAuthentication() {
@@ -235,6 +242,28 @@ public class PluggableSyncplicityTransport implements PluggableClient {
 			           PasswordAuthentication(_proxyUser,_proxyPassword.toCharArray());
 			    }});
 			
+			    
+		        System.setProperty("java.net.useSystemProxies", "true");
+
+		        List<Proxy> proxyList = ProxySelector.getDefault().select(URI.create("http://www.google.com"));
+		        if (!proxyList.isEmpty())
+		        {
+		            Proxy proxy = proxyList.get(0);
+		            switch (proxy.type())
+		            {
+		                case DIRECT:
+		                    System.out.println("Direct connection - no proxy.");
+		                    break;
+		                case HTTP:
+		                    System.out.println("HTTP proxy: " + proxy.address());
+		                    break;
+		                case SOCKS:
+		                    System.out.println("SOCKS proxy: " + proxy.address());
+		                    break;
+		            }
+		        }
+			    
+			    */
 			}
 			
 			
@@ -411,7 +440,7 @@ public class PluggableSyncplicityTransport implements PluggableClient {
 	    String VirtualPath = FolderName;
 		String FolderID = "";
 		boolean suppressErrors = true;
-		Folder cFolder[];
+		Folder cFolder[] = null;
 		
 	    String splitFolderPath[] = FolderName.split("/");    	
 		
@@ -430,11 +459,35 @@ public class PluggableSyncplicityTransport implements PluggableClient {
 	        
 	        // Retrieve the Folder ID
 	        
-	        String FolderInfo = FolderService.getExistingFolderInfo(ConsumptionSyncPoint.Id, VirtualPath, suppressErrors);
+	        String FolderInfo = FolderService.getExistingFolderInfo(ConsumptionSyncPoint, VirtualPath, suppressErrors);
 	        cFolder = Serialization.deserizalize(FolderInfo, Folder[].class);
-	                
-	        FolderID = cFolder[0].FolderId;
+	       
+	        int SyncPointId = 0;
 	        
+	        // Temporary workaround until we the virtual_path filtering is working as query parameter (now the function returns all folders)
+
+	        logger.info("Search Path: " + "\\" + VirtualPath + "\\");
+	        
+	        for (int i = 0; i < cFolder.length; i++) {
+	        	
+
+	        	logger.info("Name: " + cFolder[i].Name);
+        		logger.info("Folder ID: " + cFolder[i].FolderId);
+        		logger.info("Virtual Path: " + cFolder[i].VirtualPath);
+        		logger.info("SyncPoint ID: " + cFolder[i].SyncpointId);
+
+        		if (cFolder[i].VirtualPath.equals("\\" + VirtualPath + "\\")) {
+	        		
+    	        	logger.info("Match found");
+        		        			
+	                FolderID = cFolder[i].FolderId;
+	                VirtualPath = cFolder[i].VirtualPath;
+	                SyncPointId = cFolder[i].SyncpointId;
+	                
+	        	}
+	            
+			}
+
 	    }
 	    
 	    return FolderID;	
@@ -457,7 +510,7 @@ public class PluggableSyncplicityTransport implements PluggableClient {
 	 */
 	public String[] list() throws UnableToConsumeException {
 		
-        logger.info("Retrieving the files from folder.");
+        logger.info("Retrieving the files from folder: " + _folder);
     	String[] list = null;
 	
 		SyncPoint ListSyncPoint = getStorageEndpoint(getEndpoint(_folder));
@@ -474,6 +527,8 @@ public class PluggableSyncplicityTransport implements PluggableClient {
         if (FolderID.equals(null)) {
       	  logger.error("Folder does not exist");
       	  return null;
+        } else {
+        	logger.info("Listing contents of folder: " + _folder );
         }
         
 		// Get the Folder Contents
@@ -492,6 +547,7 @@ public class PluggableSyncplicityTransport implements PluggableClient {
         	PatternKeyValidator validator = PatternKeyValidatorFactory.createPatternValidator(_filtertype);
         	if (validator.isValid(files[i].Filename, _filter)) {
         		result.add(files[i].FileId);
+        		logger.debug(files[i].Filename + " added to list."); 
         	}
         	else {
         		logger.info(files[i].Filename + " does not match the defined filter (" + _filter +") and /or filter type (" + _filtertype + ")"); 
@@ -607,7 +663,8 @@ public class PluggableSyncplicityTransport implements PluggableClient {
 
           String UploadFolder = "";
           
-          // Do some work to hash out the right folder
+          // Retrieve Folder ID
+          
           String FolderID = getFolderID(ProductionSyncPoint, uFolderName);
           
           if (FolderID.equals(null)) {

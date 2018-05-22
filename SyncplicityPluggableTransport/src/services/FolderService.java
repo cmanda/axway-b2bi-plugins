@@ -1,6 +1,8 @@
 package services;
 
 import entities.Folder;
+import entities.FolderStatus;
+import entities.SyncPoint;
 import util.APIGateway;
 import util.ConfigurationHelper;
 
@@ -25,7 +27,8 @@ public class FolderService extends APIGateway {
     static {
         foldersUrl = ConfigurationHelper.getBaseApiEndpointUrl() + "sync/folder_folders.svc/%s/folder/%s/folders";
         folderUrl = ConfigurationHelper.getBaseApiEndpointUrl() + "sync/folder.svc/%s/folder/%s?include=active";
-        folderNameUrl = ConfigurationHelper.getBaseApiEndpointUrl() + "sync/folders.svc/%s/folders?virtual_path=%s";
+        // folderNameUrl = ConfigurationHelper.getBaseApiEndpointUrl() + "sync/folders.svc/%s/folders?virtual_path=%s";
+        folderNameUrl = ConfigurationHelper.getBaseApiEndpointUrl() + "sync/folders.svc/%s/folders";
     }
 
     /**
@@ -72,8 +75,9 @@ public class FolderService extends APIGateway {
      * @return the matching <code>Folder</code> object
      */
     
-    public static String getExistingFolderInfo(long syncPointId, String folderName, boolean suppressErrors) {
-        return httpGet(String.format(folderNameUrl, syncPointId, folderName), String.class, suppressErrors);
+    public static String getExistingFolderInfo(SyncPoint syncPointId, String folderName, boolean suppressErrors) {
+         
+        return httpGet(String.format(folderNameUrl, syncPointId.Id, folderName), String.class, suppressErrors);
     }     
 
     /**

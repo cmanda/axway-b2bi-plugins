@@ -121,16 +121,21 @@ public abstract class APIGateway {
 			
 			String encoded = Base64.encode( (_OAuthParam[0] + ":" + _OAuthParam[1]).getBytes() );
 			
+			/*
 			logger.info( "[Header] Authorization: Basic " + encoded + "\n" 
 			                   + "\t\t(Base64 encoded combination of App key and App secret)\n" 
 			                   + "\t\t" + _OAuthParam[0] + ":" + _OAuthParam[1]);
 			logger.info( "[Header] Sync-App-Token: " + _OAuthParam[2] );
+			*/
+			
 			request.addRequestProperty("Authorization", "Basic " + encoded);
 			request.setRequestProperty("Sync-App-Token", _OAuthParam[2]);
 		}
 		else {
+			/*
 			logger.info( "[Header] AppKey: " +  _OAuthParam[0] );
 			logger.info( "[Header] Authorization: Bearer " +  APIContext.getAccessToken() );
+			*/
 			request.setRequestProperty("AppKey", _OAuthParam[0]);
 			request.setRequestProperty("Authorization", "Bearer " + APIContext.getAccessToken() );
 		}
@@ -328,6 +333,8 @@ public abstract class APIGateway {
 		HttpURLConnection request;
 		String method = "POST";
 	
+		/*
+		
     	logger.info("Method: " + method);
     	logger.info("appKey: " + _OAuthParam[0]);
     	logger.info("appSecret: " + _OAuthParam[1]);
@@ -336,7 +343,8 @@ public abstract class APIGateway {
     	logger.info("contentType: " + contentType);
        	logger.info("");
 		
-    	
+    	*/
+		
 		
 		try {
 			
