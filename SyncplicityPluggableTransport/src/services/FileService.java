@@ -17,6 +17,8 @@ import java.util.TimeZone;
 import javax.xml.bind.DatatypeConverter;
 
 import entities.File;
+import entities.FileVersion;
+import entities.FileVersionDetails;
 import entities.StorageEndpoint;
 import entities.SyncPoint;
 import util.APIContext;
@@ -43,6 +45,7 @@ public class FileService extends APIGateway {
      * File service URL.
      */
     protected static String fileUrl;
+    protected static String fileVersionUrl;
 
     /**
      * Upload File URL.
@@ -57,6 +60,7 @@ public class FileService extends APIGateway {
     static {
         filesUrl = ConfigurationHelper.getBaseApiEndpointUrl() + "sync/file.svc/%s/file/%s";
         fileUrl = ConfigurationHelper.getBaseApiEndpointUrl() + "sync/file.svc/%s/file/%s";
+        fileVersionUrl = ConfigurationHelper.getBaseApiEndpointUrl() + "sync/versions.svc/%s/file/%s/versions";
         uploadFileUrl = "%s/saveFile.php?filepath=%s";
         downloadUrl = "%s/retrieveFile.php?vToken=%s&sessionKey=%s";
     }
@@ -76,6 +80,22 @@ public class FileService extends APIGateway {
         return httpGet(String.format(fileUrl, syncPointId, fileId), File.class, suppressErrors);
     }
 
+    /**
+     * Retrieves File Version info.
+     * 
+     * @param syncPointId
+     *            the SyncPoint ID
+     * @param fileVersionId
+     *            the File Version ID
+     * @param suppressErrors
+     *            Indicates whether errors should be suppressed
+     * @return the File Versions
+     */
+    public static FileVersionDetails[] getFileVersion(long syncPointId, String fileVersionId, boolean suppressErrors) {
+        return httpGet(String.format(fileVersionUrl, syncPointId, fileVersionId), FileVersionDetails[].class, suppressErrors);
+    }
+    
+    
     /**
      * Downloads a file from Syncplicity.
      * 

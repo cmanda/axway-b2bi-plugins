@@ -33,13 +33,17 @@ import util.pattern.PatternKeyValidator;
 import util.pattern.PatternKeyValidatorFactory;
 
 import entities.File;
+import entities.FileVersion;
+import entities.FileVersionDetails;
 import entities.Folder;
 import entities.FolderStatus;
+import entities.Link;
 import entities.StorageEndpoint;
 import entities.SyncPoint;
 import oauth.OAuth;
 import services.FileService;
 import services.FolderService;
+import services.LinkService;
 import services.StorageEndpointService;
 import services.SyncPointService;
 import util.APIContext;
@@ -94,6 +98,7 @@ public class PluggableSyncplicityTransport implements PluggableClient {
 	private static final String SETTING_PICKUP_PATTERN = "Filter";
 	private static final String SETTING_PATTERN_TYPE = "Filter Type";
 	private static final String SETTING_DELETE = "Delete After Consumption";
+	private static final String SETTING_ROUTING = "Upload User Email as Routing ID";
 	private static final String SETTING_PROXY = "Use Proxy";
 	private static final String SETTING_PROXY_HOST = "Proxy Host";
 	private static final String SETTING_PROXY_PORT = "Proxy Port";
@@ -124,6 +129,7 @@ public class PluggableSyncplicityTransport implements PluggableClient {
 	private String _filtertype;
 	private String _exchangeType;
 	private String _deleteAfterConsumption;
+	private String _emailAsRoutingID;
 	private String _useProxy;
 	private String _proxyHost;
 	private String _proxyPort;
@@ -186,6 +192,7 @@ public class PluggableSyncplicityTransport implements PluggableClient {
 				_filtertype = pluggableSettings.getSetting(SETTING_PATTERN_TYPE);
 				_filter = pluggableSettings.getSetting(SETTING_PICKUP_PATTERN);
 				_deleteAfterConsumption = pluggableSettings.getSetting(SETTING_DELETE);
+				_emailAsRoutingID = pluggableSettings.getSetting(SETTING_ROUTING);
 				
 			}
 
@@ -200,6 +207,7 @@ public class PluggableSyncplicityTransport implements PluggableClient {
 			OathParam[0] = _appkey;
 			OathParam[1] = _appsecret;
 			OathParam[2] = _admintoken;
+			
 			
 			// Sanitize the folder name (remove leading / if provided)
 			
@@ -241,28 +249,6 @@ public class PluggableSyncplicityTransport implements PluggableClient {
 			        return new
 			           PasswordAuthentication(_proxyUser,_proxyPassword.toCharArray());
 			    }});
-			
-			    
-		        System.setProperty("java.net.useSystemProxies", "true");
-
-		        List<Proxy> proxyList = ProxySelector.getDefault().select(URI.create("http://www.google.com"));
-		        if (!proxyList.isEmpty())
-		        {
-		            Proxy proxy = proxyList.get(0);
-		            switch (proxy.type())
-		            {
-		                case DIRECT:
-		                    System.out.println("Direct connection - no proxy.");
-		                    break;
-		                case HTTP:
-		                    System.out.println("HTTP proxy: " + proxy.address());
-		                    break;
-		                case SOCKS:
-		                    System.out.println("SOCKS proxy: " + proxy.address());
-		                    break;
-		            }
-		        }
-			    
 			    */
 			}
 			
@@ -332,6 +318,8 @@ public class PluggableSyncplicityTransport implements PluggableClient {
 			uploadFile(message, _folder);
 		 	message.setMetadata("SyncplicityDeliveryFolder", _folder);
 		 	
+		 	
+		 	
 
 	     
 		} catch (Exception e) {
@@ -348,7 +336,7 @@ public class PluggableSyncplicityTransport implements PluggableClient {
 
 		try {
 
-			SyncPoint ConsumptionSyncPoint = getStorageEndpoint(getEndpoint(_folder));
+			SyncPoint ConsumptionSyncPoint = getStorageEndpoint(getSyncPointFromPath(_folder));
 
 	        if (ConsumptionSyncPoint == null) {
 	            logger.error("The syncpoint was not created at previous steps. No files will be retrieved.");
@@ -399,13 +387,20 @@ public class PluggableSyncplicityTransport implements PluggableClient {
 				 	message.setMetadata("SyncplicityFileName", files[i].Filename);
 				 	message.setMetadata("SyncplicityFileCreationDate", files[i].CreationTimeUtc);
 				 	message.setMetadata("SyncplicityFileLastModificationDate", files[i].LastWriteTimeUtc);
-				 	//message.setMetadata("SyncplicityFileLatestVersion", String.valueOf(files[i].Versions[files[i].LatestVersionId].Id));
+				 	
+				 	
+				 	if (_emailAsRoutingID.equals("true")) {
+				 		FileVersionDetails[] Fileversions = FileService.getFileVersion(ConsumptionSyncPoint.Id, files[i].LatestVersionId, true );
+				 		message.setMetadata(MetadataDictionary.SENDER_ROUTING_ID, Fileversions[0].User.EmailAddress);
+				 	} else {
+				 		message.setMetadata(MetadataDictionary.SENDER_ROUTING_ID, _folder);
+				 	}
 				
 				 	
 				 	// Delete the file if necessary
 				 	if (_deleteAfterConsumption.equals("true")) {
 					 	String something = FileService.deleteFile(ConsumptionSyncPoint.Id, fileId, true);
-					 	logger.info("Delete status: " + something);
+					 	logger.info("Consumed file deleted");
 				 	
 				 	}
 				 	
@@ -423,19 +418,9 @@ public class PluggableSyncplicityTransport implements PluggableClient {
 	
 
 	}
-	public static String getEndpoint(String Path) {
-
-	   String splitFolderPath[] = Path.split("/");
-	   
-       if(splitFolderPath.length < 1) {
-       	return null;
-       } else {
-    	   return splitFolderPath[0];
-       }
-	}
 	
 	
-	public static String getFolderID (SyncPoint ConsumptionSyncPoint, String FolderName) {
+	public static String getFolderID (SyncPoint sSyncPoint, String FolderName) {
 	
 	    String VirtualPath = FolderName;
 		String FolderID = "";
@@ -448,35 +433,30 @@ public class PluggableSyncplicityTransport implements PluggableClient {
 	    if(splitFolderPath.length < 2) {
 	    	
 	    	// Folder path must be EndpointPath
-	    	FolderID = ConsumptionSyncPoint.RootFolderId;
+	    	FolderID = sSyncPoint.RootFolderId;
 	    	
 	    } else {
-	        logger.info("Path is a combination of endpoint and subfolders.");
 	        
-	        // Remove Syncpoint from provided folder path
-	        
-	        VirtualPath = NonSyncPointPath(FolderName);
-	        
-	        // Retrieve the Folder ID
-	        
-	        String FolderInfo = FolderService.getExistingFolderInfo(ConsumptionSyncPoint, VirtualPath, suppressErrors);
+	        String FolderInfo = FolderService.getExistingFolderInfo(sSyncPoint, getRelativeURLPath(FolderName), suppressErrors);
 	        cFolder = Serialization.deserizalize(FolderInfo, Folder[].class);
 	       
 	        int SyncPointId = 0;
 	        
 	        // Temporary workaround until we the virtual_path filtering is working as query parameter (now the function returns all folders)
 
-	        logger.info("Search Path: " + "\\" + VirtualPath + "\\");
+	        logger.info("Search Path: " + getRelativePath(FolderName));
 	        
 	        for (int i = 0; i < cFolder.length; i++) {
 	        	
 
-	        	logger.info("Name: " + cFolder[i].Name);
-        		logger.info("Folder ID: " + cFolder[i].FolderId);
-        		logger.info("Virtual Path: " + cFolder[i].VirtualPath);
-        		logger.info("SyncPoint ID: " + cFolder[i].SyncpointId);
+	        	logger.debug("===============");
+	        	logger.debug("Name: " + cFolder[i].Name);
+        		logger.debug("Folder ID: " + cFolder[i].FolderId);
+        		logger.debug("Virtual Path: " + cFolder[i].VirtualPath);
+        		logger.debug("SyncPoint ID: " + cFolder[i].SyncpointId);
+	        	logger.debug("===============");
 
-        		if (cFolder[i].VirtualPath.equals("\\" + VirtualPath + "\\")) {
+        		if (cFolder[i].VirtualPath.equals(getRelativePath(FolderName))) {
 	        		
     	        	logger.info("Match found");
         		        			
@@ -513,7 +493,7 @@ public class PluggableSyncplicityTransport implements PluggableClient {
         logger.info("Retrieving the files from folder: " + _folder);
     	String[] list = null;
 	
-		SyncPoint ListSyncPoint = getStorageEndpoint(getEndpoint(_folder));
+		SyncPoint ListSyncPoint = getStorageEndpoint(getSyncPointFromPath(_folder));
 
         if (ListSyncPoint == null) {
             logger.info("No Syncpoint was found. No files will be retrieved.");
@@ -522,9 +502,9 @@ public class PluggableSyncplicityTransport implements PluggableClient {
 	        
 	    // Get the Folder ID
 	        
-    	String FolderID = getFolderID(ListSyncPoint, _folder);
+    	String lFolderID = getFolderID(ListSyncPoint, _folder);
        	
-        if (FolderID.equals(null)) {
+        if (lFolderID.equals(null)) {
       	  logger.error("Folder does not exist");
       	  return null;
         } else {
@@ -533,7 +513,7 @@ public class PluggableSyncplicityTransport implements PluggableClient {
         
 		// Get the Folder Contents
         
-        Folder folder = FolderService.getFolder(ListSyncPoint.Id, FolderID, true);
+        Folder folder = FolderService.getFolder(ListSyncPoint.Id, lFolderID, true);
         File[] files = folder.Files;
         if (files.length == 0) {
             logger.info("No files in: " + _folder);
@@ -614,19 +594,78 @@ public class PluggableSyncplicityTransport implements PluggableClient {
 
 	// Syncplicity 
 
-    private static String NonSyncPointPath (String FullPath) {
+   private static String getSyncPointFromPath (String FullPath) {
 
+    	// Remove leading "/"
+    	
+    	FullPath = FullPath.startsWith("/") ? FullPath.substring(1) : FullPath;
+    	
+    	// Retrieve Syncpoint
+
+    	String splitFolderPath[] = FullPath.split("/");    	
+        
+    	String basePath = Paths.get(splitFolderPath[0]).toString();
+
+    	return basePath;
+    	
+    
+    }
+    
+    private static String getRelativePath (String FullPath) {
+
+    	// Remove leading "/"
+    	
+    	FullPath = FullPath.startsWith("/") ? FullPath.substring(1) : FullPath;
+    	
+    	// Separate Syncpoint and folder Path
+    	
         String splitFolderPath[] = FullPath.split("/");    	
         
     	final Path fullPath = Paths.get(FullPath);
     	final Path basePath = Paths.get(splitFolderPath[0]);
-    	final Path relativePath = basePath.relativize(fullPath);
+    	final Path getRelativePath = basePath.relativize(fullPath);
 
-    	logger.info("Relative Path: "+ relativePath);
+    	// Replace slashes (this is only effective on Unix, on Windows the Path separator will already be correct)
+    	String SyncPath = "\\" + getRelativePath.toString().replace('/', '\\') + "\\";
+
+   	
+    	return SyncPath;
     	
-    	return relativePath.toString().replace('\\', '/');
+    
     }
-	
+
+    private static String getRelativeURLPath (String FullPath) {
+
+    	// Remove leading "/"
+    	
+    	FullPath = FullPath.startsWith("/") ? FullPath.substring(1) : FullPath;
+    	
+    	// Separate Syncpoint and folder Path
+    	
+        String splitFolderPath[] = FullPath.split("/");    	
+        
+    	final Path fullPath = Paths.get(FullPath);
+    	final Path basePath = Paths.get(splitFolderPath[0]);
+    	final Path getRelativePath = basePath.relativize(fullPath);
+
+    	
+    	// Replace slashes (this is only effective on Unix, on Windows the Path separator will already be correct)
+    	String SyncPath = "/" + getRelativePath.toString().replace('\\', '/') + "/";
+
+        String EncodedPath = "";
+
+    	// Encode Path
+    	try {
+        	EncodedPath = java.net.URLEncoder.encode(SyncPath, "UTF-8");
+		} catch (Exception e) {
+			// TODO: handle exception
+		}    	
+   	
+    	return EncodedPath;
+    	
+    
+    }
+
 	
     private static SyncPoint getStorageEndpoint(String FolderName) {
         SyncPoint[] syncPoints = SyncPointService.getSyncPoints(true);
@@ -644,7 +683,7 @@ public class PluggableSyncplicityTransport implements PluggableClient {
  	private static void uploadFile(PluggableMessage message, String uFolderName) {
          logger.info("Starting File upload..");
 
-		SyncPoint ProductionSyncPoint = getStorageEndpoint(getEndpoint(uFolderName));
+		SyncPoint ProductionSyncPoint = getStorageEndpoint(getSyncPointFromPath(uFolderName));
         
 		StorageEndpoint[] storageEndpoints = StorageEndpointService.getStorageEndpoints(true);
 		          
@@ -665,16 +704,16 @@ public class PluggableSyncplicityTransport implements PluggableClient {
           
           // Retrieve Folder ID
           
-          String FolderID = getFolderID(ProductionSyncPoint, uFolderName);
+          String uFolderID = getFolderID(ProductionSyncPoint, uFolderName);
           
-          if (FolderID.equals(null)) {
+          if (uFolderID.equals(null)) {
         	  logger.error("Target folder does not exist");
         	  return;
           }
           
-          Folder ufolder = FolderService.getFolder(ProductionSyncPoint.Id, FolderID, true);
+          Folder ufolder = FolderService.getFolder(ProductionSyncPoint.Id, uFolderID, true);
                    
-          logger.info(String.format("Finished Folder creation. New Folder id: %s", FolderID));
+          logger.info(String.format("Finished Folder creation. New Folder id: %s", uFolderID));
            
           logger.info("Starting File upload..");
           byte[] fileBody = "file body".getBytes();
@@ -683,7 +722,6 @@ public class PluggableSyncplicityTransport implements PluggableClient {
                     
           String result = FileService.uploadFile(storageEndpoint.Urls[0].Url, ufolder.VirtualPath, fileName, ufolder.SyncpointId, fileBody);
           logger.info(String.format("Finished File upload. File upload result: %s", result));
-		
 		
 	}
 	

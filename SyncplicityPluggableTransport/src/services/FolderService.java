@@ -27,8 +27,10 @@ public class FolderService extends APIGateway {
     static {
         foldersUrl = ConfigurationHelper.getBaseApiEndpointUrl() + "sync/folder_folders.svc/%s/folder/%s/folders";
         folderUrl = ConfigurationHelper.getBaseApiEndpointUrl() + "sync/folder.svc/%s/folder/%s?include=active";
-        // folderNameUrl = ConfigurationHelper.getBaseApiEndpointUrl() + "sync/folders.svc/%s/folders?virtual_path=%s";
-        folderNameUrl = ConfigurationHelper.getBaseApiEndpointUrl() + "sync/folders.svc/%s/folders";
+        //folderNameUrl = ConfigurationHelper.getBaseApiEndpointUrl() + "sync/folders.svc/%s/folders?virtual_path=%s";
+        // Temporary workaround until we the virtual_path filtering is working as query parameter (list all folders)
+        folderNameUrl = ConfigurationHelper.getBaseApiEndpointUrl() + "sync/folders.svc/%s/folders";   
+
     }
 
     /**
@@ -76,7 +78,6 @@ public class FolderService extends APIGateway {
      */
     
     public static String getExistingFolderInfo(SyncPoint syncPointId, String folderName, boolean suppressErrors) {
-         
         return httpGet(String.format(folderNameUrl, syncPointId.Id, folderName), String.class, suppressErrors);
     }     
 

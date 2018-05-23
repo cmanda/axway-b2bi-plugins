@@ -24,6 +24,12 @@
                                 <SelectionItem>false</SelectionItem>
                         </SelectionList>
                 </SettingDefinition>
+                <SettingDefinition name="User Email as Routing ID" description="Use the upload user's email address as Routing ID - if false, the upload path will be used" encrypt="false" mask="false" required="true" type="string" defaultValue="true">
+                        <SelectionList>
+                                <SelectionItem>true</SelectionItem>
+                                <SelectionItem>false</SelectionItem>
+                        </SelectionList>
+                </SettingDefinition>
                 <SettingDefinition name="Use Proxy" description="Use Proxy for pickup exchanges" encrypt="false" mask="false" required="true" type="string" defaultValue="false">
                         <SelectionList>
                                 <SelectionItem>true</SelectionItem>
