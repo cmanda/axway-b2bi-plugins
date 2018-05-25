@@ -8,6 +8,7 @@
 * Restart Trading Engine on all the B2Bi nodes
 * Source can be viewed [here](https://github.com/TurnUpTheBass/axway-b2bi-plugins/tree/master/SyncplicityPluggableTransport) 
 * If you are building on your local developer environment, add a lib folder to the project and include interchange-server.jar and other relevant dependencies. 
+* This connector has been developed for B2Bi 2.3.1 and higher
 
 ## Documentation
 
