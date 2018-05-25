@@ -16,8 +16,8 @@ https://docs.google.com/document/d/13ZJOqxbR8S8ZP216-ZZ651Pm985H5LlCmknonOgVy7o/
 ### Sample screenshots
 
 #### Sample Application Pickup Configuration
-![Sample Application Pickup Configuration](screenshots/B2Bi_Syncplicity_ApplicationPickup.jpg)
+![Sample Application Pickup Configuration](distributions/screenshots/B2Bi_Syncplicity_ApplicationPickup.jpg)
 
 
 #### Sample Application Delivery Configuration
-![Sample Application Delivery Configuration](screenshots/B2Bi_Syncplicity_ApplicationDelivery.jpg)
+![Sample Application Delivery Configuration](distributions/screenshots/B2Bi_Syncplicity_ApplicationDelivery.jpg)
