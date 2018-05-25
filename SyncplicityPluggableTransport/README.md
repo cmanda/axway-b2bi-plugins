@@ -9,6 +9,10 @@
 * Source can be viewed [here](https://github.com/TurnUpTheBass/axway-b2bi-plugins/tree/master/SyncplicityPluggableTransport) 
 * If you are building on your local developer environment, add a lib folder to the project and include interchange-server.jar and other relevant dependencies. 
 
+## Documentation
+
+https://docs.google.com/document/d/13ZJOqxbR8S8ZP216-ZZ651Pm985H5LlCmknonOgVy7o/edit?usp=sharing
+
 ### Sample screenshots
 
 #### Sample Application Pickup Configuration
