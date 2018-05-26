@@ -27,23 +27,19 @@ import com.cyclonecommerce.tradingengine.transport.pluggable.api.PluggableExcept
 import com.cyclonecommerce.tradingengine.transport.pluggable.api.PluggableSettings;
 import com.cyclonecommerce.util.VirtualData;
 import com.cyclonecommerce.tradingengine.transport.pluggable.api.PluggableMessage;
-import util.PluginConstants;
 import util.Serialization;
 import util.pattern.PatternKeyValidator;
 import util.pattern.PatternKeyValidatorFactory;
 
 import entities.File;
-import entities.FileVersion;
 import entities.FileVersionDetails;
 import entities.Folder;
 import entities.FolderStatus;
-import entities.Link;
 import entities.StorageEndpoint;
 import entities.SyncPoint;
 import oauth.OAuth;
 import services.FileService;
 import services.FolderService;
-import services.LinkService;
 import services.NtlmAuthenticator;
 import services.StorageEndpointService;
 import services.SyncPointService;
@@ -52,39 +48,23 @@ import util.APIGateway;
 
 
 import java.net.Authenticator;
-import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
-import java.net.PasswordAuthentication;
-import java.net.Proxy;
-import java.net.ProxySelector;
-import java.net.URI;
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
-import java.security.cert.X509Certificate;
+
 
 import org.apache.log4j.Logger;
 
-import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.util.Map;
 import java.util.Iterator;
-import java.util.List;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Properties;
 
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSession;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
 
 import org.apache.log4j.Level;
 
@@ -139,7 +119,6 @@ public class PluggableSyncplicityTransport implements PluggableClient {
 	private String _useProxy;
 	private String _proxyHost;
 	private String _proxyPort;
-	private String _proxyDomain;
 	private String _proxyUser;
 	private String _proxyPassword;
 	
@@ -162,7 +141,7 @@ public class PluggableSyncplicityTransport implements PluggableClient {
 		if(logger.getLevel() == null) {
 			logger.setLevel(Level.INFO);
 		}
-		logger.info(String.format("Executing PluggableTransport: %s version: %s",_PGMNAME,_PGMVERSION));
+		logger.debug(String.format("Executing PluggableTransport: %s version: %s",_PGMNAME,_PGMVERSION));
 	}
 
 	/**
@@ -223,7 +202,7 @@ public class PluggableSyncplicityTransport implements PluggableClient {
 			_folder = _folder.startsWith("/") ? _folder.substring(1) : _folder;
 
 			
-			logger.info(String.format("Initialization Syncplicity connector Complete"));
+			logger.debug(String.format("Initialization Syncplicity connector Complete"));
 			
 			
 			
@@ -272,9 +251,7 @@ public class PluggableSyncplicityTransport implements PluggableClient {
 		
 		try { 
 
-			disableSslVerification();
-			
-			logger.info(String.format("Authenticating"));
+			logger.debug(String.format("Authenticating"));
 			APIGateway.setOAuthParameters(OathParam);
 
 			OAuth.authenticate();
@@ -284,7 +261,7 @@ public class PluggableSyncplicityTransport implements PluggableClient {
 				System.exit(1);
 			}
 			else {
-				logger.info( "Authentication was successful." );			
+				logger.debug( "Authentication was successful." );			
 			}
 		} catch (Exception e) {
 			throw new UnableToAuthenticateException("Unable to authenticate to Syncplity server");
@@ -319,7 +296,7 @@ public class PluggableSyncplicityTransport implements PluggableClient {
 		
 		try { 
 			
-			logger.info(String.format("Producing message"));
+			logger.debug(String.format("Producing message"));
 			
 			uploadFile(message, _folder, _createFolder);
 		 	message.setMetadata("SyncplicityDeliveryFolder", _folder);
@@ -358,16 +335,16 @@ public class PluggableSyncplicityTransport implements PluggableClient {
             
         	// Get Folder contents
 
-        	logger.info("Now retrieving requested file(s) from folder: " + _folder);
+        	logger.debug("Now retrieving requested file(s) from folder: " + _folder);
 					
 		    Folder listfolder = FolderService.getFolder(ConsumptionSyncPoint.Id, FolderID, true);
-	        logger.info("Number of files in the folder: " + listfolder.Files.length); 
+	        logger.debug("Number of files in the folder: " + listfolder.Files.length); 
 
 	        
 	        
 	        File[] files = listfolder.Files;
 	        if (files.length == 0) {
-	            logger.info("No files in the syncpoint.");
+	            logger.debug("No files to receive");
 	            return null;
 	        } 
 	        
@@ -390,18 +367,18 @@ public class PluggableSyncplicityTransport implements PluggableClient {
 				 	message.setMetadata("SyncplicityFileName", files[i].Filename);
 				 	message.setMetadata("SyncplicityFileCreationDate", files[i].CreationTimeUtc);
 				 	message.setMetadata("SyncplicityFileLastModificationDate", files[i].LastWriteTimeUtc);
-				 	
+
+			 		FileVersionDetails[] Fileversions = FileService.getFileVersion(ConsumptionSyncPoint.Id, files[i].LatestVersionId, true );
+				 	message.setMetadata("SyncplicityUserEmailAddress", Fileversions[0].User.EmailAddress);
+
 				 		
 				 	// Set Routing ID information
-				 	logger.info("Use the following metadata as routing ID: \"" + _emailAsRoutingID + "\"");
-				 	
+				 	logger.debug("Use the following metadata as routing ID: \"" + _emailAsRoutingID + "\"");
 				 	
 				 	if (_emailAsRoutingID.equals("-")) {
 				 	}
 				 	else if (_emailAsRoutingID.equals("User Email")) {
-				 		FileVersionDetails[] Fileversions = FileService.getFileVersion(ConsumptionSyncPoint.Id, files[i].LatestVersionId, true );
 				 		message.setMetadata(MetadataDictionary.SENDER_ROUTING_ID, Fileversions[0].User.EmailAddress);
-					 	message.setMetadata("SyncplicityUserEmailAddress", Fileversions[0].User.EmailAddress);
 				 	}
 				 	else if (_emailAsRoutingID.equals("Pickup Folder")) {
 				 		message.setMetadata(MetadataDictionary.SENDER_ROUTING_ID, _folder);
@@ -412,7 +389,7 @@ public class PluggableSyncplicityTransport implements PluggableClient {
 				 	
 				 	if (_deleteAfterConsumption.equals("true")) {
 					 	String something = FileService.deleteFile(ConsumptionSyncPoint.Id, fileId, true);
-					 	logger.info("Consumed file deleted");
+					 	logger.debug("Consumed file deleted");
 				 	
 				 	}
 				 	
@@ -422,7 +399,7 @@ public class PluggableSyncplicityTransport implements PluggableClient {
 
 
 		} catch (Exception e) {
-	     logger.info("Error" + e);
+	     logger.error("Error" + e);
 		
 		}     
 		
@@ -456,7 +433,7 @@ public class PluggableSyncplicityTransport implements PluggableClient {
 	        
 	        // Temporary workaround until we the virtual_path filtering is working as query parameter (now the function returns all folders)
 
-	        logger.info("Search Path: " + getRelativePath(FolderName));
+	        logger.debug("Search Path: " + getRelativePath(FolderName));
 	        
 	        for (int i = 0; i < cFolder.length; i++) {
 
@@ -492,7 +469,7 @@ public class PluggableSyncplicityTransport implements PluggableClient {
 	 */
 	public String[] list() throws UnableToConsumeException {
 		
-        logger.info("Retrieving the files from folder: " + _folder);
+        logger.debug("Retrieving the files from folder: " + _folder);
     	String[] list = null;
 	
 		SyncPoint ListSyncPoint = getStorageEndpoint(getSyncPointFromPath(_folder));
@@ -509,7 +486,7 @@ public class PluggableSyncplicityTransport implements PluggableClient {
       	  logger.error("Folder does not exist");
       	  return null;
         } else {
-        	logger.info("Listing contents of folder: " + _folder );
+        	logger.debug("Listing contents of folder: " + _folder );
         }
         
 		// Get the Folder Contents
@@ -517,7 +494,7 @@ public class PluggableSyncplicityTransport implements PluggableClient {
         Folder folder = FolderService.getFolder(ListSyncPoint.Id, lFolderID, true);
         File[] files = folder.Files;
         if (files.length == 0) {
-            logger.info("No files in: " + _folder);
+            logger.debug("No files in: " + _folder);
         } else {
         
 	        ArrayList<String> result = new ArrayList<String>();
@@ -530,7 +507,7 @@ public class PluggableSyncplicityTransport implements PluggableClient {
 	        		logger.debug(files[i].Filename + " added to list."); 
 	        	}
 	        	else {
-	        		logger.info(files[i].Filename + " does not match the defined filter (" + _filter +") and /or filter type (" + _filtertype + ")"); 
+	        		logger.debug(files[i].Filename + " does not match the defined filter (" + _filter +") and /or filter type (" + _filtertype + ")"); 
 	        	}
 			
 			}
@@ -538,7 +515,7 @@ public class PluggableSyncplicityTransport implements PluggableClient {
 			list = new String[result.size()];
 			for (int i = 0; i < result.size(); i++) {
 				list[i] = result.get(i);
-				logger.info("Adding Item [" + i + "]: " + list[i]);
+				logger.debug("Adding Item [" + i + "]: " + list[i]);
 			}
         }     
         
@@ -570,8 +547,7 @@ public class PluggableSyncplicityTransport implements PluggableClient {
 	public String test() throws TransportTestException {
 		
 		try {
-			
-			disableSslVerification();
+			connect();
 			OAuth.authenticate();
 
 		} catch(Exception e) {
@@ -695,7 +671,7 @@ public class PluggableSyncplicityTransport implements PluggableClient {
         SyncPoint[] syncPoints = SyncPointService.getSyncPoints(true);
         for (int i = 0; i < syncPoints.length; i++) {
 			if (syncPoints[i].Name.equals(FolderName)) {
-		        logger.info("Retrieved requested endpoint.");
+		        logger.debug("Retrieved requested endpoint.");
 				return syncPoints[i];
 			}
         }
@@ -705,7 +681,7 @@ public class PluggableSyncplicityTransport implements PluggableClient {
     
    	
  	private static void uploadFile(PluggableMessage message, String uFolderName, String uCreateFolder) throws UnableToProduceException {
-         logger.info("Starting File upload..");
+         logger.debug("Starting File upload..");
 
 		SyncPoint ProductionSyncPoint = getStorageEndpoint(getSyncPointFromPath(uFolderName));
         
@@ -713,7 +689,6 @@ public class PluggableSyncplicityTransport implements PluggableClient {
 		          
 		StorageEndpoint storageEndpoint = null;
 		  for (StorageEndpoint endpoint : storageEndpoints) {
-		  	logger.info("Syncpoint Name: " + ProductionSyncPoint.Name);
 		  	if (endpoint.Id.equals(ProductionSyncPoint.StorageEndpointId)) {
 		          storageEndpoint = endpoint;
 		    }
@@ -752,50 +727,18 @@ public class PluggableSyncplicityTransport implements PluggableClient {
           
           Folder ufolder = FolderService.getFolder(ProductionSyncPoint.Id, uFolderID, true);
                    
-          logger.info(String.format("Finished Folder creation. New Folder id: %s", uFolderID));
+          logger.debug(String.format("Finished Folder creation. New Folder id: %s", uFolderID));
            
-          logger.info("Starting File upload..");
+          logger.debug("Starting File upload..");
           byte[] fileBody = "file body".getBytes();
           String fileName = message.getMetadata(MetadataDictionary.CONSUMPTION_FILENAME);
 
                     
           String result = FileService.uploadFile(storageEndpoint.Urls[0].Url, ufolder.VirtualPath, fileName, ufolder.SyncpointId, fileBody);
-          logger.info(String.format("Finished File upload. File upload result: %s", result));
+          logger.debug(String.format("Finished File upload. File upload result: %s", result));
 		
 	}
 	
 
-	private static void disableSslVerification() {
-		try {
-			// Create a trust manager that does not validate certificate chains
-			TrustManager[] trustAllCerts = new TrustManager[] { new X509TrustManager() {
-				public void checkClientTrusted(X509Certificate[] certs, String authType) { }
-				public void checkServerTrusted(X509Certificate[] certs, String authType) { }
-
-				public java.security.cert.X509Certificate[] getAcceptedIssuers() {
-					return null;
-				}
-			}};
-			// Install the all-trusting trust manager
-			SSLContext sc = SSLContext.getInstance("SSL");
-			sc.init(null, trustAllCerts, new java.security.SecureRandom());
-			HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
-
-			// Create all-trusting host name verifier
-			HostnameVerifier allHostsValid = new HostnameVerifier() {
-				@Override
-				public boolean verify(String hostname, SSLSession session) {
-					return true;
-				}
-			};
-			// Install the all-trusting host verifier
-			HttpsURLConnection.setDefaultHostnameVerifier(allHostsValid);
-		} catch (NoSuchAlgorithmException e) {
-			e.printStackTrace();
-		} catch (KeyManagementException e) {
-			e.printStackTrace();
-		}
-	}
-	
 	  	
 }

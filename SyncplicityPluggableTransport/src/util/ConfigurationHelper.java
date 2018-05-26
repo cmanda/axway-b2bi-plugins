@@ -16,8 +16,7 @@ public class ConfigurationHelper {
 	
 	private final static String SIMPLE_PASSWORD = "123123aA";
 	private final static String REPORTS_FOLDER  = "Syncplicity Reports"; //Default system name, should not need to change
-    private final static String GROUP_NAME      = "SampleAppGroup-";
-    private final static String SYNCPOINT_NAME  = "SampleAppSyncpoint-";
+     private final static String SYNCPOINT_NAME  = "SampleAppSyncpoint-";
     private final static String FOLDER_NAME     = "SampleAppFolder-";
     private final static String REPORT_NAME     = "SampleAppReportStorageByUser-";
     
@@ -57,12 +56,6 @@ public class ConfigurationHelper {
 		return CONSUMER_REDIRECT_URL;
 	}
 
-
-	//Default group name used for creating user groups
-	public static String getGroupName() {
-		return GROUP_NAME;
-	}
-	
 
 	// Returns the base url of the api gateway
 	public static String getBaseApiEndpointUrl() {

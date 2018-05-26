@@ -52,7 +52,7 @@ public abstract class APIGateway {
 	private static HttpURLConnection createRequest(String method, String uri, boolean isAuthenticationCall )
 			throws IOException {
 		
-		logger.info(String.format("Creating %s request to %s", method.toUpperCase(), uri));
+		logger.debug(String.format("Creating %s request to %s", method.toUpperCase(), uri));
 
 		URL url = new URL(uri);
 
@@ -88,7 +88,6 @@ public abstract class APIGateway {
 			body = body.replaceAll(" ", "  " );
 		}
 		
-		logger.info( "[Body] " + body);
 
 		try {
 			OutputStream requestStream = request.getOutputStream();
@@ -168,7 +167,7 @@ public abstract class APIGateway {
 				InputStream responseStream = request.getInputStream();
 				
 				if (responseStream == null) {
-					logger.info("Response wasn't received.");
+					logger.debug("Response wasn't received.");
 					return null;
 				}
 
@@ -191,7 +190,7 @@ public abstract class APIGateway {
 				finally { }
 
 				if( StringUtils.isEmpty(response) || StringUtils.isWhitespace(response) ) {
-					logger.info("Received response is empty.");
+					logger.debug("Received response is empty.");
 					return null;
 				}
 
@@ -210,7 +209,7 @@ public abstract class APIGateway {
                         return JSONSerialization.deserizalize(response, classType);
                     }
                 } catch (Exception e) {
-                    logger.info("Could not parse the reponse as JSON. Probably the response is of some other format.");
+                    logger.debug("Could not parse the reponse as JSON. Probably the response is of some other format.");
                 }
 
 				return (T) response;
@@ -290,7 +289,7 @@ public abstract class APIGateway {
         if (shouldRefreshToken.getResult())
         {
         	logger.info("");
-        	logger.info("Trying to re-authenticate using the same credentials.");
+        	logger.debug("Trying to re-authenticate using the same credentials.");
 
             // it's needed to authorize again
             // trying to do it and then re-send the initial request
@@ -299,11 +298,11 @@ public abstract class APIGateway {
             logger.info("");
             if (!APIContext.isAuthenticated())
             {
-            	logger.info("The OAuth authentication has failed, GET request can't be performed.");
+            	logger.debug("The OAuth authentication has failed, GET request can't be performed.");
                 return null;
             }
 
-            logger.info("Authentication was successful. Trying to send GET request again for the last time.");
+            logger.debug("Authentication was successful. Trying to send GET request again for the last time.");
 
             try {
     			request = createRequest(method, uri, false);
@@ -348,8 +347,7 @@ public abstract class APIGateway {
 		
 		try {
 			
-        	logger.info("");
-        	logger.info("Create Request.");
+        	logger.debug("Create Request.");
 			
 			request = createRequest(method, uri, isAuthenticationCall );
 			request.setRequestProperty("Content-Type", contentType );
@@ -371,21 +369,19 @@ public abstract class APIGateway {
         
         if (!isAuthenticationCall && shouldRefreshToken.getResult())
         {
-        	logger.info("");
-        	logger.info("Trying to re-authenticate using the same credentials.");
+        	logger.debug("Trying to re-authenticate using the same credentials.");
 
             // it's needed to authorize again
             // trying to do it and then re-send the initial request
             OAuth.refreshToken();
 
-            logger.info("");
             if (!APIContext.isAuthenticated())
             {
-            	logger.info("The OAuth authentication has failed, POST request can't be performed.");
+            	logger.debug("The OAuth authentication has failed, POST request can't be performed.");
                 return null;
             }
 
-            logger.info("Authentication was successful. Trying to send POST request again for the last time.");
+            logger.debug("Authentication was successful. Trying to send POST request again for the last time.");
             
             try {
             	request = createRequest(method, uri, isAuthenticationCall );
@@ -449,21 +445,19 @@ public abstract class APIGateway {
         
         if (shouldRefreshToken.getResult())
         {
-        	logger.info("");
-        	logger.info("Trying to re-authenticate using the same credentials.");
+        	logger.debug("Trying to re-authenticate using the same credentials.");
 
             // it's needed to authorize again
             // trying to do it and then re-send the initial request
             OAuth.refreshToken();
 
-            logger.info("");
             if (!APIContext.isAuthenticated())
             {
-            	logger.info("The OAuth authentication has failed, PUT request can't be performed.");
+            	logger.debug("The OAuth authentication has failed, PUT request can't be performed.");
                 return null;
             }
 
-            logger.info("Authentication was successful. Trying to send PUT request again for the last time.");
+            logger.debug("Authentication was successful. Trying to send PUT request again for the last time.");
             
             try {
             	request = createRequest(method, uri, false);
@@ -529,7 +523,7 @@ public abstract class APIGateway {
 		HttpURLConnection request;
 		String method = "DELETE";
 
-		logger.info("Sending the DELETE request for :" + uri);
+		logger.debug("Sending the DELETE request for :" + uri);
 
 		try {
 			request = createRequest(method, uri, false);
@@ -546,21 +540,20 @@ public abstract class APIGateway {
         
         if (shouldRefreshToken.getResult())
         {
-        	logger.info("");
-        	logger.info("Trying to re-authenticate using the same credentials.");
+        	logger.debug("Trying to re-authenticate using the same credentials.");
 
             // it's needed to authorize again
             // trying to do it and then re-send the initial request
             OAuth.refreshToken();
 
-            logger.info("");
+
             if (!APIContext.isAuthenticated())
             {
-            	logger.info("The OAuth authentication has failed, DELETE request can't be performed.");
+            	logger.debug("The OAuth authentication has failed, DELETE request can't be performed.");
                 return null;
             }
 
-            logger.info("Authentication was successful. Trying to send DELETE request again for the last time.");
+            logger.debug("Authentication was successful. Trying to send DELETE request again for the last time.");
             
             try {
             	request = createRequest(method, uri, false);
