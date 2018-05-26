@@ -44,17 +44,21 @@ import oauth.OAuth;
 import services.FileService;
 import services.FolderService;
 import services.LinkService;
+import services.NtlmAuthenticator;
 import services.StorageEndpointService;
 import services.SyncPointService;
 import util.APIContext;
 import util.APIGateway;
 
+
 import java.net.Authenticator;
 import java.net.InetSocketAddress;
+import java.net.MalformedURLException;
 import java.net.PasswordAuthentication;
 import java.net.Proxy;
 import java.net.ProxySelector;
 import java.net.URI;
+import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.KeyManagementException;
@@ -63,8 +67,11 @@ import java.security.cert.X509Certificate;
 
 import org.apache.log4j.Logger;
 
+import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.Map;
 import java.util.Iterator;
 import java.util.List;
@@ -109,6 +116,8 @@ public class PluggableSyncplicityTransport implements PluggableClient {
 	// Setting to distinguish pickup and delivery mode
 	private static final String SETTING_EXCHANGE_TYPE = "Exchange Type";
 
+	private final static String CONNECTION_URL  = "https://api.syncplicity.com";
+
 	
 	//this is how you get the log4J logger instance for this class
 	private static Logger logger = Logger.getLogger(com.axway.gps.PluggableSyncplicityTransport.class.getName());
@@ -130,6 +139,7 @@ public class PluggableSyncplicityTransport implements PluggableClient {
 	private String _useProxy;
 	private String _proxyHost;
 	private String _proxyPort;
+	private String _proxyDomain;
 	private String _proxyUser;
 	private String _proxyPassword;
 	
@@ -230,36 +240,34 @@ public class PluggableSyncplicityTransport implements PluggableClient {
 	 */
 	public void connect() throws UnableToConnectException {
 		
+        URL url = null;
+        
 		try {
-			
-			if (_useProxy.equals("true")) {
-			
-				// Set Proxy
-			
-			    System.setProperty("http.proxyHost", _proxyHost) ;
-			    System.setProperty("http.proxyPort", _proxyPort) ;
-			    System.setProperty("https.proxyHost", _proxyHost) ;
-			    System.setProperty("https.proxyPort", _proxyPort) ;
-			    System.setProperty("socksProxyHost", _proxyHost) ;
-			    System.setProperty("socksProxyPort", _proxyPort) ;
-	
-			    Authenticator.setDefault(new Authenticator() {
-			      protected PasswordAuthentication getPasswordAuthentication() {
-			        return new
-			           PasswordAuthentication(_proxyUser,_proxyPassword.toCharArray());
-			    }});
-			   
-			}
-			
-			
-			logger.info(String.format("Connecting to Syncplicity Server"));
-			
-		} catch (Exception e) {
-			throw new UnableToConnectException("Unable to connect to Syncplity server");
+			url = new URL(CONNECTION_URL);
+		} catch (MalformedURLException e1) {
+			e1.printStackTrace();
 		}
-		
+        
+		if (_useProxy.equals("true")) {
+			
+			System.setProperty("http.proxyHost", _proxyHost);
+			System.setProperty("http.proxyPort", _proxyPort);
+			System.setProperty("https.proxyHost", _proxyHost);
+			System.setProperty("https.proxyPort", _proxyPort);
+			
+		    Authenticator.setDefault(new NtlmAuthenticator(_proxyUser, _proxyPassword));
+		}
+        
+
+		try {
+			url.openConnection();
+		} catch (IOException e) {
+			throw new UnableToConnectException("Failed to connect to Syncplicity Server");
+		}
+	
 	}
 
+	
 	public void authenticate() throws UnableToAuthenticateException {
 		
 		try { 
