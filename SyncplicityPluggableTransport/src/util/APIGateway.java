@@ -14,9 +14,6 @@ import org.apache.log4j.Logger;
 import oauth.OAuth;
 import oauth.TokenResponse;
 
-import com.axway.dmznode.DmzAgentFactory;
-import com.axway.dmznode.xsr.XsrAgent;
-
 import org.apache.commons.lang.StringUtils;
 
 import com.google.gson.Gson;
@@ -30,7 +27,6 @@ public abstract class APIGateway {
 	private final static String ACCEPT_HEADER = "Accept";
 	private final static String JSON_CONTENT_TYPE = "application/json";
 	private static String _OAuthParam[] = new String[3];
-	private static boolean _useDMZNode;
 	
 	protected static String provisioningAPIUrlPrefix = "";
 	private static Logger logger = Logger.getLogger(com.axway.gps.PluggableSyncplicityTransport.class.getName());
@@ -54,21 +50,10 @@ public abstract class APIGateway {
 		_OAuthParam = OAuthParameters;
 	}
 
-	public static void setDMZParameter(boolean useDMZ) {
-		_useDMZNode = useDMZ;
-	}	
-	
+
 	private static HttpURLConnection createRequest(String method, String uri, boolean isAuthenticationCall )
 			throws IOException {
-		
-		InetSocketAddress outAddr = null;	
-		
-		if (_useDMZNode = true ) {
-	      outAddr = DmzAgentFactory.getInstance().getAgent().requestOutForwardingAddr(new InetSocketAddress(url.getHost(), 80), 60000, null);
-	      logger.debug("Forwarding host: " + outAddr.getHostName());
-	      logger.debug("Forwarding Port: " + outAddr.getPort());
-		}
-		
+
 		logger.debug(String.format("Creating %s request to %s", method.toUpperCase(), uri));
 
 		URL url = new URL(uri);

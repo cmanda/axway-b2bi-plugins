@@ -1,4 +1,5 @@
 /**==============================================================================
+ * Program/Module :     PluggableSyncplicityTransport.java
  * Description :       	Pluggable transport that implements the Syncplicity APIs
  * Supported Products :	B2Bi 2.x
  * Author :				Bas van den Berg
@@ -8,7 +9,7 @@
  * 20180506 bvandenberg	1.0.0	initial version.
  *==============================================================================*/
 
-package com.axway.gps;
+package com.axway.gps2;
 
 import com.cyclonecommerce.tradingengine.transport.UnableToConnectException;
 import com.cyclonecommerce.tradingengine.transport.UnableToAuthenticateException;
