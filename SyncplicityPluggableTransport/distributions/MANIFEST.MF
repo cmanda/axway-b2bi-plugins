@@ -1,0 +1,5 @@
+Manifest-Version: 1.0
+Class-Path: b2b-azure-plugin/lib/azure-storage-6.1.0.jar b2b-azure-plu
+ gin/lib/azure-keyvault-core-0.8.0.jar b2b-azure-plugin/lib/commons-la
+ ng3-3.7.jar
+
