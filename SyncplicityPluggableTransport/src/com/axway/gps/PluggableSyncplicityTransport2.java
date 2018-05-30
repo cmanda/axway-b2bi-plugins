@@ -1,5 +1,4 @@
 /**==============================================================================
- * Program/Module :     PluggableSyncplicityTransport.java
  * Description :       	Pluggable transport that implements the Syncplicity APIs
  * Supported Products :	B2Bi 2.x
  * Author :				Bas van den Berg
@@ -31,6 +30,10 @@ import util.Serialization;
 import util.pattern.PatternKeyValidator;
 import util.pattern.PatternKeyValidatorFactory;
 
+import com.axway.dmznode.DmzAgentFactory;
+import com.axway.dmznode.DmzException;
+
+
 import entities.File;
 import entities.FileVersionDetails;
 import entities.Folder;
@@ -48,7 +51,9 @@ import util.APIGateway;
 
 
 import java.net.Authenticator;
+import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
+import java.net.ServerSocket;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
@@ -70,10 +75,10 @@ import java.util.Properties;
 import org.apache.log4j.Level;
 
 
-public class PluggableSyncplicityTransport implements PluggableClient {
+public class PluggableSyncplicityTransport2 implements PluggableClient {
 	
 	//Set program name and version
-	String _PGMNAME = com.axway.gps.PluggableSyncplicityTransport.class.getName();
+	String _PGMNAME = com.axway.gps.PluggableSyncplicityTransport2.class.getName();
 	String _PGMVERSION = "1.0.0";
 	
 	/** Constants defining valid configuration tags 
@@ -93,6 +98,7 @@ public class PluggableSyncplicityTransport implements PluggableClient {
 	private static final String SETTING_PROXY_PORT = "Proxy Port";
 	private static final String SETTING_PROXY_USER = "Proxy Username";
 	private static final String SETTING_PROXY_PW = "Proxy Password";
+	private static final String SETTING_DMZ = "Use DMZ";
 
 	// Setting to distinguish pickup and delivery mode
 	private static final String SETTING_EXCHANGE_TYPE = "Exchange Type";
@@ -101,7 +107,7 @@ public class PluggableSyncplicityTransport implements PluggableClient {
 
 	
 	//this is how you get the log4J logger instance for this class
-	private static Logger logger = Logger.getLogger(com.axway.gps.PluggableSyncplicityTransport.class.getName());
+	private static Logger logger = Logger.getLogger(com.axway.gps.PluggableSyncplicityTransport2.class.getName());
 
 	/** a Map containing temporary Message metadata **/
 	private Map metadata = null;
@@ -122,6 +128,7 @@ public class PluggableSyncplicityTransport implements PluggableClient {
 	private String _proxyPort;
 	private String _proxyUser;
 	private String _proxyPassword;
+	private String _useDMZ;
 	
     String messageContent = null;
 	private String OathParam[] = new String[3];
@@ -136,7 +143,7 @@ public class PluggableSyncplicityTransport implements PluggableClient {
 	/**
 	 * Default constructor - the only constructor used by B2Bi
 	 */
-	public PluggableSyncplicityTransport() {
+	public PluggableSyncplicityTransport2() {
 		
 		//Set a default logger level
 		if(logger.getLevel() == null) {
@@ -191,6 +198,8 @@ public class PluggableSyncplicityTransport implements PluggableClient {
 			_proxyPort = pluggableSettings.getSetting(SETTING_PROXY_PORT);
 			_proxyUser = pluggableSettings.getSetting(SETTING_PROXY_USER);
 			_proxyPassword = pluggableSettings.getSetting(SETTING_PROXY_PW);
+			_useDMZ = pluggableSettings.getSetting(SETTING_DMZ);
+			
 			
 			
 			OathParam[0] = _appkey;
@@ -202,6 +211,12 @@ public class PluggableSyncplicityTransport implements PluggableClient {
 			
 			_folder = _folder.startsWith("/") ? _folder.substring(1) : _folder;
 
+			
+			if (_useDMZ.equals("true")) {
+				APIGateway.setDMZParameter(true);
+			} else {
+				APIGateway.setDMZParameter(false);
+			}
 			
 			logger.debug(String.format("Initialization Syncplicity connector Complete"));
 			
@@ -238,11 +253,29 @@ public class PluggableSyncplicityTransport implements PluggableClient {
 		    Authenticator.setDefault(new NtlmAuthenticator(_proxyUser, _proxyPassword));
 		}
         
+		InetSocketAddress outAddr = null;	
 
 		try {
-			url.openConnection();
+			  
+			  // Get the outbound forwarding address
+		      		
+		      outAddr = DmzAgentFactory.getInstance().getAgent().requestOutForwardingAddr(new InetSocketAddress(url.getHost(), 80), 60000, null);
+
+		      logger.debug("Forwarding host: " + outAddr.getHostName());
+		      logger.debug("Forwarding Port: " + outAddr.getPort());
+		      // Validate if this is working
+		      
+		      ServerSocket socket=new ServerSocket();
+		      socket.bind(outAddr);
+		      socket.setSoTimeout(1000);
+	      
+			
 		} catch (IOException e) {
-			throw new UnableToConnectException("Failed to connect to Syncplicity Server");
+    	    System.err.println("Failed to connect to Syncplicity Server");
+		} catch (DmzException e) {
+			
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 	
 	}
@@ -254,6 +287,7 @@ public class PluggableSyncplicityTransport implements PluggableClient {
 
 			logger.debug(String.format("Authenticating"));
 			APIGateway.setOAuthParameters(OathParam);
+
 
 			OAuth.authenticate();
 			
@@ -729,11 +763,11 @@ public class PluggableSyncplicityTransport implements PluggableClient {
           Folder ufolder = FolderService.getFolder(ProductionSyncPoint.Id, uFolderID, true);
                    
           logger.debug(String.format("Finished Folder creation. New Folder id: %s", uFolderID));
-           
           logger.debug("Starting File upload..");
           String fileName = message.getMetadata(MetadataDictionary.CONSUMPTION_FILENAME);
+                    
           String result = FileService.uploadFile(storageEndpoint.Urls[0].Url, ufolder.VirtualPath, fileName, ufolder.SyncpointId, message.getData().toString().getBytes(StandardCharsets.UTF_8));
-         logger.debug(String.format("Finished File upload. File upload result: %s", result));
+          logger.debug(String.format("Finished File upload. File upload result: %s", result));
 		
 	}
 	
